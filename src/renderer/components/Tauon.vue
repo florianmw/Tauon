@@ -29,7 +29,7 @@
         <FormItem label="Port">
             <InputNumber :min="1024" :max="65535" v-model="listenForm.port"
               placeholder="Enter Port" clearable>
-            </Input>
+            </InputNumber>
         </FormItem>
       </Form>
     </Modal>
@@ -114,7 +114,7 @@
         this.scroll = !this.scroll
       },
       listen () {
-        ipcRenderer.send('listen', this.listenForm.input)
+        ipcRenderer.send('listen', this.listenForm.port)
       },
       clearMsgs () {
         this.items = []
