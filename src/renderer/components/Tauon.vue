@@ -14,8 +14,7 @@
       </Input>
     </div>
     <div id="content" v-chat-scroll="{always: false}">
-      <pre><span class="log" v-for="item in items" v-show="checkDisplay(item)" :style="item.style">{{ item.msg }}
-</span></pre>
+      <pre id="log"></pre>
     </div>
     <Modal v-model="showListen" title="Listen" @on-ok="listen"
       @on-cancel="showListen=false">
@@ -49,7 +48,7 @@
         showListen: false,
         showFilter: false,
         state: ['Listen', 'default'],
-        items: [],
+        buffer: '',
         patterns: [{pattern: /error/i, bgColor: 'red', color: 'white'}],
         listenForm: {
           port: 21999,
@@ -59,36 +58,41 @@
         filterType: 'filter'
       }
     },
-    created () {
-    },
     mounted () {
       ipcRenderer.on('listening', (evt, addr) => {
         this.state = ['Stop', 'primary']
       })
       ipcRenderer.on('message', (evt, msg, info) => {
-        var msgs = msg.toString().split(/[\r\n]+/)
+        var msgStr = msg.toString()
+        var buffer = this.buffer
+
+        // prepend previous received part
+        if (buffer.length > 0) {
+          msgStr = buffer + msgStr
+          buffer = ''
+        }
+
+        // messages will be displayed line by line
+        var msgs = msgStr.split(/[\r\n]+/)
         var len = msgs.length
-        var pLen = this.patterns.length
+
+        // detect partly received messages
+        if (!msgStr.endsWith('\n')) {
+          buffer = msgs[--len]
+        }
+
         for (var i = 0; i < len; i++) {
           var line = msgs[i]
-          var color = null
-          var bgColor = null
-          for (var j = 0; j < pLen; j++) {
-            var pattern = this.patterns[j]
-            if (line.search(pattern.pattern) !== -1) {
-              color = pattern.color
-              bgColor = pattern.bgColor
-              break
-            }
+          var style = this.getStyle(line)
+          var logContainer = document.getElementById('log')
+          var logElement = document.createElement('span')
+          var logText = document.createTextNode(line + '\n')
+
+          if (style.length > 0) {
+            logElement.setAttribute('style', style)
           }
-          var style = ''
-          if (color) {
-            style += 'color: ' + color + ';'
-          }
-          if (bgColor) {
-            style += 'backgroundColor: ' + bgColor + ';'
-          }
-          this.items.push({msg: line, style: style})
+          logElement.appendChild(logText)
+          logContainer.appendChild(logElement)
         }
       })
       ipcRenderer.on('close', (evt) => {
@@ -97,6 +101,29 @@
       ipcRenderer.on('error', (evt, err) => (
         this.$Modal.error({ title: 'Error', content: err })
       ))
+    },
+    watch: {
+      filter (pattern) {
+        var logElements = document.getElementById('log').children
+        var len = logElements.length
+
+        for (var i = 0; i < len; i++) {
+          var elem = logElements[i]
+          var show = this.checkDisplay(pattern, elem.innerText)
+          var style = this.parseStyle(elem.getAttribute('style'))
+
+          if (show) {
+            delete style['display']
+          } else if (style['display'] !== 'none') {
+            style['display'] = 'none'
+          }
+          if (Object.keys(style).length > 0) {
+            elem.setAttribute('style', this.generateStyle(style))
+          } else {
+            elem.removeAttribute('style')
+          }
+        }
+      }
     },
     beforeDestroy () {
       ipcRenderer.send('close')
@@ -112,28 +139,66 @@
           ipcRenderer.send('close')
         }
       },
-      toggleScroll () {
-        this.scroll = !this.scroll
-      },
       listen () {
         ipcRenderer.send('listen', this.listenForm.port)
       },
       clearMsgs () {
-        this.items = []
-      },
-      checkDisplay (it) {
-        var display = true
-        var filter = this.filter
-        if (this.filterType === 'filter' && filter &&
-            it.msg.search(filter) === -1) {
-          display = false
+        var logContainer = document.getElementById('log')
+        var child = logContainer.firstChild
+
+        while (child) {
+          logContainer.removeChild(child)
+          child = logContainer.firstChild
         }
-        return display
+      },
+      getStyle (line) {
+        var pLen = this.patterns.length
+        var style = []
+        for (var j = 0; j < pLen; j++) {
+          var pattern = this.patterns[j]
+          if (line.search(pattern.pattern) !== -1) {
+            if (pattern.color) {
+              style['color'] = pattern.color
+            }
+            if (pattern.bgColor) {
+              style['background-color'] = pattern.bgColor
+            }
+            break
+          }
+        }
+
+        if (!this.checkDisplay(this.filter, line)) {
+          style['display'] = 'none'
+        }
+
+        return this.generateStyle(style)
+      },
+      checkDisplay (filter, line) {
+        return !(this.filterType === 'filter' && filter.length > 0 &&
+            line.search(filter) === -1)
+      },
+      parseStyle (style) {
+        var obj = []
+        if (style) {
+          var styles = style.split(';')
+          for (var i = 0; i < styles.length; i++) {
+            var pair = styles[i].split(':')
+            if (pair.length === 2) {
+              obj[pair[0]] = pair[1]
+            }
+          }
+        }
+        return obj
+      },
+      generateStyle (obj) {
+        var style = ''
+        var keys = Object.keys(obj)
+        for (var i = 0; i < keys.length; i++) {
+          var key = keys[i]
+          style += key + ':' + obj[key] + ';'
+        }
+        return style
       }
-      /*
-      open (link) {
-        this.$electron.shell.openExternal(link)
-      }, */
     }
   }
 </script>
