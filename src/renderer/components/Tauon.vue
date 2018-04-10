@@ -21,10 +21,10 @@
       @on-cancel="showListen=false">
       <Form :model="listenForm" :label-width="80">
         <FormItem label="Type">
-            <Select v-model="listenForm.type" :rules="{required: true}">
-                <Option value="dgram">UDP</Option>
-                <Option value="serial" disabled>Serial</Option>
-            </Select>
+          <Select v-model="listenForm.type" :rules="{required: true}">
+            <Option value="dgram">UDP</Option>
+            <Option value="serial" disabled>Serial</Option>
+          </Select>
         </FormItem>
         <FormItem label="Port">
             <InputNumber :min="1024" :max="65535" v-model="listenForm.port"
