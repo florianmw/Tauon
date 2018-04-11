@@ -210,6 +210,7 @@ pre {
 #content {
   height: calc(100vh - 42px);
   overflow-y: scroll;
+  padding: 5px;
 }
 #toolbar {
   display: flex;
