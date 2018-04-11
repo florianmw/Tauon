@@ -91,6 +91,7 @@
           if (style.length > 0) {
             logElement.setAttribute('style', style)
           }
+          logElement.setAttribute('class', 'log')
           logElement.appendChild(logText)
           logContainer.appendChild(logElement)
         }
