@@ -64,21 +64,20 @@
       })
       ipcRenderer.on('message', (evt, msg, info) => {
         var msgStr = msg.toString()
-        var buffer = this.buffer
 
         // prepend previous received part
-        if (buffer.length > 0) {
-          msgStr = buffer + msgStr
-          buffer = ''
+        if (this.buffer.length > 0) {
+          msgStr = this.buffer + msgStr
+          this.buffer = ''
         }
 
         // messages will be displayed line by line
-        var msgs = msgStr.split(/[\r\n]+/)
-        var len = msgs.length
+        var msgs = msgStr.split(/\r?\n/)
+        var len = msgs.length - 1
 
         // detect partly received messages
-        if (!msgStr.endsWith('\n')) {
-          buffer = msgs[--len]
+        if (msgs[len].length > 0) {
+          this.buffer = msgs[len]
         }
 
         for (var i = 0; i < len; i++) {
