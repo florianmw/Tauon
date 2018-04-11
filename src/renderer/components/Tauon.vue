@@ -4,6 +4,7 @@
       <div>
         <Button :type="state[1]" @click="listenModal">{{ state[0] }}</Button>
         <Button type="default" @click="clearMsgs">Clear</Button>
+        <Button type="default" @click="showColors=true">Colors</Button>
       </div>
       <Input v-model="filter" style="width: 420px">
         <Select v-model="filterType" slot="prepend" style="width: 80px">
@@ -32,10 +33,35 @@
         </FormItem>
       </Form>
     </Modal>
-    <!--
-    <Modal v-model="showMarkup">
+    <Modal v-model="showColors">
+      <Form :label-width="80">
+        <FormItem v-for="(item, index) in patterns" :key="index"
+            :label="'Pattern ' + index">
+          <Row>
+            <Col span="18">
+              <Input type="text" v-model="item.pattern"
+                  placeholder="Enter pattern..."></Input>
+            </Col>
+            <Col span="18">
+              <ColorPicker v-model="item.color" alpha recommended />
+            </Col>
+            <Col span="18">
+              <ColorPicker v-model="item.bgColor" alpha recommended />
+            </Col>
+            <Col span="4" offset="1">
+              <Button type="ghost" @click="colorRemove(index)">Delete</Button>
+            </Col>
+          </Row>
+        </FormItem>
+        <FormItem>
+          <Row>
+            <Col span="12">
+              <Button type="dashed" long @click="colorAdd" icon="plus-round">Add item</Button>
+            </Col>
+          </Row>
+        </FormItem>
+      </Form>
     </Modal>
-    -->
   </div>
 </template>
 
@@ -47,9 +73,10 @@
       return {
         showListen: false,
         showFilter: false,
+        showColors: false,
         state: ['Listen', 'default'],
         buffer: '',
-        patterns: [{pattern: /error/i, bgColor: 'red', color: 'white'}],
+        patterns: [{pattern: 'Error', bgColor: 'red', color: 'white'}],
         listenForm: {
           port: 21999,
           type: 'dgram'
@@ -157,10 +184,10 @@
         for (var j = 0; j < pLen; j++) {
           var pattern = this.patterns[j]
           if (line.search(pattern.pattern) !== -1) {
-            if (pattern.color) {
+            if (pattern.color.length > 0) {
               style['color'] = pattern.color
             }
-            if (pattern.bgColor) {
+            if (pattern.bgColor.length > 0) {
               style['background-color'] = pattern.bgColor
             }
             break
@@ -198,6 +225,12 @@
           style += key + ':' + obj[key] + ';'
         }
         return style
+      },
+      colorAdd () {
+        this.patterns.push({'pattern': '', color: '', bgColor: ''})
+      },
+      colorRemove (idx) {
+        this.patterns.splice(idx, 1)
       }
     }
   }
