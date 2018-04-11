@@ -206,6 +206,8 @@
 <style>
 pre {
   margin: 0px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 #content {
   height: calc(100vh - 42px);
