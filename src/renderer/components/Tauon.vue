@@ -43,10 +43,10 @@
                   placeholder="Enter pattern..."></Input>
             </Col>
             <Col span="18">
-              <ColorPicker v-model="item.color" alpha recommended />
+              <ColorPicker v-model="item.color" alpha recommend />
             </Col>
             <Col span="18">
-              <ColorPicker v-model="item.bgColor" alpha recommended />
+              <ColorPicker v-model="item.bgColor" alpha recommend />
             </Col>
             <Col span="4" offset="1">
               <Button type="ghost" @click="colorRemove(index)">Delete</Button>
