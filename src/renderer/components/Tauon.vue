@@ -94,7 +94,8 @@
           type: 'dgram'
         },
         filter: '',
-        filterType: 'filter'
+        filterType: 'filter',
+        filterTimer: null
       }
     },
     mounted () {
@@ -146,25 +147,10 @@
     },
     watch: {
       filter (pattern) {
-        var logElements = document.getElementById('log').children
-        var len = logElements.length
-
-        for (var i = 0; i < len; i++) {
-          var elem = logElements[i]
-          var show = this.checkDisplay(pattern, elem.innerText)
-          var style = this.parseStyle(elem.getAttribute('style'))
-
-          if (show) {
-            delete style['display']
-          } else if (style['display'] !== 'none') {
-            style['display'] = 'none'
-          }
-          if (Object.keys(style).length > 0) {
-            elem.setAttribute('style', this.generateStyle(style))
-          } else {
-            elem.removeAttribute('style')
-          }
+        if (this.filterTimer !== null) {
+          clearTimeout(this.filterTimer)
         }
+        this.filterTimer = setTimeout(() => { this.updateFilter(pattern) }, 500)
       }
     },
     beforeDestroy () {
@@ -191,6 +177,27 @@
         while (child) {
           logContainer.removeChild(child)
           child = logContainer.firstChild
+        }
+      },
+      updateFilter (pattern) {
+        var logElements = document.getElementById('log').children
+        var len = logElements.length
+
+        for (var i = 0; i < len; i++) {
+          var elem = logElements[i]
+          var show = this.checkDisplay(pattern, elem.innerText)
+          var style = this.parseStyle(elem.getAttribute('style'))
+
+          if (show) {
+            delete style['display']
+          } else if (style['display'] !== 'none') {
+            style['display'] = 'none'
+          }
+          if (Object.keys(style).length > 0) {
+            elem.setAttribute('style', this.generateStyle(style))
+          } else {
+            elem.removeAttribute('style')
+          }
         }
       },
       getStyle (line) {
