@@ -87,6 +87,8 @@
     },
     mounted () {
       ipcRenderer.on('listening', (evt, addr) => {
+        this.$Message.success({content: 'Listening on UDP Port ' + addr.port,
+          duration: 3})
         this.state = ['Stop', 'primary']
       })
       ipcRenderer.on('message', (evt, msg, info) => {
@@ -123,6 +125,7 @@
         }
       })
       ipcRenderer.on('close', (evt) => {
+        this.$Message.info({content: 'Closed', duration: 3})
         this.state = ['Listen', 'default']
       })
       ipcRenderer.on('error', (evt, err) => (
