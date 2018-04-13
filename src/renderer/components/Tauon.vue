@@ -38,30 +38,37 @@
         </FormItem>
       </Form>
     </Modal>
-    <Modal v-model="showColors">
-      <Form :label-width="80">
-        <FormItem v-for="(item, index) in patterns" :key="index"
-            :label="'Pattern ' + index">
-          <Row>
-            <Col span="18">
+    <Modal v-model="showColors" title="Colored pattern">
+      <Row type="flex" justify="space-between" :gutter="5">
+        <Col span="9">Pattern</Col>
+        <Col span="5">Text</Col>
+        <Col span="5">Background</Col>
+        <Col span="5"></Col>
+      </Row>
+      <Form>
+        <FormItem v-for="(item, index) in patterns" :key="index">
+          <Row type="flex" justify="space-between" :gutter="5">
+            <Col span="9">
               <Input type="text" v-model="item.pattern"
                   placeholder="Enter pattern..."></Input>
             </Col>
-            <Col span="18">
+            <Col span="5">
               <ColorPicker v-model="item.color" alpha recommend />
             </Col>
-            <Col span="18">
+            <Col span="5">
               <ColorPicker v-model="item.bgColor" alpha recommend />
             </Col>
-            <Col span="4" offset="1">
-              <Button type="ghost" @click="colorRemove(index)">Delete</Button>
+            <Col span="5">
+              <Button type="ghost" @click="colorRemove(index)"
+                  icon="close-round">Delete</Button>
             </Col>
           </Row>
         </FormItem>
         <FormItem>
           <Row>
             <Col span="12">
-              <Button type="dashed" long @click="colorAdd" icon="plus-round">Add item</Button>
+              <Button type="dashed" long @click="colorAdd"
+                  icon="plus-round">Add item</Button>
             </Col>
           </Row>
         </FormItem>
