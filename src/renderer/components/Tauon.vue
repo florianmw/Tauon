@@ -26,10 +26,15 @@
             <Option value="serial" disabled>Serial</Option>
           </Select>
         </FormItem>
-        <FormItem label="Port">
+        <FormItem v-show="listenForm.type == 'dgram'" label="Port">
             <InputNumber :min="1024" :max="65535" v-model="listenForm.port"
               placeholder="Enter Port" clearable>
             </InputNumber>
+        </FormItem>
+        <FormItem v-show="listenForm.type == 'serial'" label="Device">
+            <Input v-model="listenForm.dev" placeholder="Enter Device"
+              clearable>
+            </Input>
         </FormItem>
       </Form>
     </Modal>
