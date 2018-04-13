@@ -238,6 +238,7 @@
 
 <style>
 pre {
+  color: #000;
   margin: 0px;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -252,7 +253,7 @@ pre {
   justify-content: space-between;
   height: 42px;
   padding: 4px;
-  background-color: #f7f7f7;
+  background-color: #ccc;
 }
 #toolbar>* {
   box-sizing: border-box;
