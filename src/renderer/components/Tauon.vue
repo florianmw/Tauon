@@ -88,7 +88,10 @@
         showColors: false,
         state: ['Listen', 'default'],
         buffer: '',
-        patterns: [{pattern: 'Error', bgColor: 'red', color: 'white'}],
+        patterns: [
+          {pattern: 'Error', color: 'red', bgColor: ''},
+          {pattern: 'error', color: 'red', bgColor: ''}
+        ],
         listenForm: {
           port: 21999,
           type: 'dgram'
