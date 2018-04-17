@@ -4,6 +4,7 @@ import { ipcMain, app, BrowserWindow } from 'electron'
 // import 'dgram'
 let dgram = require('dgram')
 let fs = require('fs')
+let path = require('path')
 
 /**
  * Set `__static` path to static files in production
