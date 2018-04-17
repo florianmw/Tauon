@@ -3,6 +3,7 @@
 import { ipcMain, app, BrowserWindow } from 'electron'
 // import 'dgram'
 let dgram = require('dgram')
+let SerialPort = require('serialport')
 let fs = require('fs')
 let path = require('path')
 
@@ -57,10 +58,8 @@ app.on('activate', () => {
  * Listen on requested UDP port
  */
 
-var listenSock
-
-ipcMain.on('listen', (evt, port) => {
-  listenSock = dgram.createSocket('udp6')
+ipcMain.on('listenDgram', (evt, port) => {
+  var listenSock = dgram.createSocket('udp6')
 
   // emits when any error occurs
   listenSock.on('error', (error) => {
@@ -84,11 +83,37 @@ ipcMain.on('listen', (evt, port) => {
     evt.sender.send('close')
   })
 
+  ipcMain.once('close', () => {
+    listenSock.close()
+  })
+
   listenSock.bind(port)
 })
 
-ipcMain.on('close', () => {
-  listenSock.close()
+ipcMain.on('listenSerial', (evt, device, rate) => {
+  var port = new SerialPort(device, {baudRate: rate}, () => {
+    evt.sender.send('listening', {port: device})
+  })
+
+  // emits when any error occurs
+  port.on('error', (error) => {
+    evt.sender.send('error', error.toString())
+    port.close()
+  })
+
+  port.on('data', (data) => {
+    evt.sender.send('message', data)
+  })
+
+  port.on('close', () => {
+    evt.sender.send('close')
+  })
+
+  ipcMain.once('close', () => {
+    port.close(() => {
+      evt.sender.send('close')
+    })
+  })
 })
 
 ipcMain.on('readConfig', (evt) => {

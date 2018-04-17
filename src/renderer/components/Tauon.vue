@@ -23,7 +23,7 @@
         <FormItem label="Type">
           <Select v-model="listenForm.type" :rules="{required: true}">
             <Option value="dgram">UDP</Option>
-            <Option value="serial" disabled>Serial</Option>
+            <Option value="serial">Serial</Option>
           </Select>
         </FormItem>
         <FormItem v-show="listenForm.type == 'dgram'" label="Port">
@@ -35,6 +35,18 @@
             <Input v-model="listenForm.dev" placeholder="Enter Device"
               clearable>
             </Input>
+        </FormItem>
+        <FormItem v-show="listenForm.type == 'serial'" label="Baud rate">
+          <Select v-model="listenForm.rate">
+            <Option value="1200">1200</Option>
+            <Option value="2400">2400</Option>
+            <Option value="4800">4800</Option>
+            <Option value="9600">9600</Option>
+            <Option value="1920">19200</Option>
+            <Option value="38400">38400</Option>
+            <Option value="57600">57600</Option>
+            <Option value="115200">115200</Option>
+          </Select>
         </FormItem>
       </Form>
     </Modal>
@@ -96,7 +108,8 @@
         ],
         listenForm: {
           port: 21999,
-          type: 'dgram'
+          type: 'dgram',
+          rate: '115200'
         },
         colorForm: {
           patterns: []
@@ -111,8 +124,11 @@
         this.patterns = cfg
       })
       ipcRenderer.on('listening', (evt, addr) => {
-        this.$Message.success({content: 'Listening on UDP Port ' + addr.port,
-          duration: 3})
+        var type = this.listenForm.type === 'dgram' ? 'UDP' : 'Serial'
+        this.$Message.success({
+          content: 'Listening on ' + type + ' Port ' + addr.port,
+          duration: 3
+        })
         this.state = ['Stop', 'primary']
       })
       ipcRenderer.on('message', (evt, msg, info) => {
@@ -180,7 +196,12 @@
         }
       },
       listen () {
-        ipcRenderer.send('listen', this.listenForm.port)
+        if (this.listenForm.type === 'dgram') {
+          ipcRenderer.send('listenDgram', this.listenForm.port)
+        } else {
+          ipcRenderer.send('listenSerial', this.listenForm.dev,
+            parseInt(this.listenForm.rate))
+        }
       },
       clearMsgs () {
         var logContainer = document.getElementById('log')
