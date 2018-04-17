@@ -3,6 +3,7 @@
 import { ipcMain, app, BrowserWindow } from 'electron'
 // import 'dgram'
 let dgram = require('dgram')
+let fs = require('fs')
 
 /**
  * Set `__static` path to static files in production
@@ -16,6 +17,8 @@ let mainWindow
 const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
+
+var configFile = path.join(app.getPath('userData'), 'tauon.json')
 
 function createWindow () {
   /**
@@ -85,6 +88,23 @@ ipcMain.on('listen', (evt, port) => {
 
 ipcMain.on('close', () => {
   listenSock.close()
+})
+
+ipcMain.on('readConfig', (evt) => {
+  fs.readFile(configFile, 'utf-8', (err, data) => {
+    if (err === null) {
+      evt.sender.send('config', JSON.parse(data))
+    }
+  })
+})
+
+ipcMain.on('writeConfig', (evt, cfg) => {
+  var configStr = JSON.stringify(cfg, null, 2)
+  fs.writeFile(configFile, configStr, (err) => {
+    if (err === null) {
+      evt.sender.send('config', cfg)
+    }
+  })
 })
 
 /**
