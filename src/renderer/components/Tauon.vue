@@ -4,7 +4,7 @@
       <div>
         <Button :type="state[1]" @click="listenModal">{{ state[0] }}</Button>
         <Button type="default" @click="clearMsgs">Clear</Button>
-        <Button type="default" @click="showColors=true">Colors</Button>
+        <Button type="default" @click="showColorForm">Colors</Button>
       </div>
       <Input v-model="filter" style="width: 420px">
         <Select v-model="filterType" slot="prepend" style="width: 80px">
@@ -46,7 +46,7 @@
         <Col span="5"></Col>
       </Row>
       <Form>
-        <FormItem v-for="(item, index) in patterns" :key="index">
+        <FormItem v-for="(item, index) in colorForm.patterns" :key="index">
           <Row type="flex" justify="space-between" :gutter="5">
             <Col span="9">
               <Input type="text" v-model="item.pattern"
@@ -73,6 +73,8 @@
           </Row>
         </FormItem>
       </Form>
+      <div slot="footer"><Button type="success" @click="saveConfig"
+          long>Save</Button></div>
     </Modal>
   </div>
 </template>
@@ -96,12 +98,18 @@
           port: 21999,
           type: 'dgram'
         },
+        colorForm: {
+          patterns: []
+        },
         filter: '',
         filterType: 'filter',
         filterTimer: null
       }
     },
     mounted () {
+      ipcRenderer.on('config', (evt, cfg) => {
+        this.patterns = cfg
+      })
       ipcRenderer.on('listening', (evt, addr) => {
         this.$Message.success({content: 'Listening on UDP Port ' + addr.port,
           duration: 3})
@@ -147,6 +155,7 @@
       ipcRenderer.on('error', (evt, err) => (
         this.$Modal.error({ title: 'Error', content: err })
       ))
+      ipcRenderer.send('readConfig')
     },
     watch: {
       filter (pattern) {
@@ -251,11 +260,19 @@
         }
         return style
       },
+      showColorForm () {
+        this.colorForm.patterns = this.patterns.slice(0)
+        this.showColors = true
+      },
       colorAdd () {
-        this.patterns.push({'pattern': '', color: '', bgColor: ''})
+        this.colorForm.patterns.push({'pattern': '', color: '', bgColor: ''})
       },
       colorRemove (idx) {
-        this.patterns.splice(idx, 1)
+        this.colorForm.patterns.splice(idx, 1)
+      },
+      saveConfig () {
+        ipcRenderer.send('writeConfig', this.colorForm.patterns)
+        this.showColors = false
       }
     }
   }
