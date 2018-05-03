@@ -3,7 +3,6 @@
     <div id="toolbar">
       <div>
         <Button :type="state[1]" @click="listenModal">{{ state[0] }}</Button>
-        <Button type="default" @click="clearMsgs">Clear</Button>
         <Button type="default" @click="showColorForm">Colors</Button>
       </div>
       <Input v-model="filter" style="width: 420px">
@@ -14,9 +13,13 @@
         <Button slot="append" icon="ios-search"></Button>
       </Input>
     </div>
-    <div id="content" v-chat-scroll="{always: false}">
-      <pre id="log"></pre>
-    </div>
+    <Tabs type="card" closable @on-click="tabChange" @on-tab-remove="tabRemove">
+      <TabPane v-for="tab in tabs" :key="tab" :name="tab" :label="tab">
+        <div class="content" v-chat-scroll="{always: false}">
+          <pre :id="'log' + tab"></pre>
+        </div>
+      </TabPane>
+    </Tabs>
     <Modal v-model="showListen" title="Listen" @on-ok="listen"
       @on-cancel="showListen=false">
       <Form :model="listenForm" :label-width="80">
@@ -102,6 +105,8 @@
         showColors: false,
         state: ['Listen', 'default'],
         buffer: '',
+        currentTab: '',
+        tabs: [],
         patterns: [
           {pattern: 'Error', color: 'red', bgColor: ''},
           {pattern: 'error', color: 'red', bgColor: ''}
@@ -133,35 +138,16 @@
       })
       ipcRenderer.on('message', (evt, msg, info) => {
         var msgStr = msg.toString()
+        var addr = info.address.replace(/^::ffff:/, '')
 
-        // prepend previous received part
-        if (this.buffer.length > 0) {
-          msgStr = this.buffer + msgStr
-          this.buffer = ''
-        }
-
-        // messages will be displayed line by line
-        var msgs = msgStr.split(/\r?\n/)
-        var len = msgs.length - 1
-
-        // detect partly received messages
-        if (msgs[len].length > 0) {
-          this.buffer = msgs[len]
-        }
-
-        for (var i = 0; i < len; i++) {
-          var line = msgs[i]
-          var style = this.getStyle(line)
-          var logContainer = document.getElementById('log')
-          var logElement = document.createElement('span')
-          var logText = document.createTextNode(line + '\n')
-
-          if (style.length > 0) {
-            logElement.setAttribute('style', style)
-          }
-          logElement.setAttribute('class', 'log')
-          logElement.appendChild(logText)
-          logContainer.appendChild(logElement)
+        if (this.getTab(addr) !== -1) {
+          this.addMessage(msgStr, addr)
+        } else {
+          this.tabs.push(addr)
+          // add message to new tab after DOM update
+          this.$nextTick(() => {
+            this.addMessage(msgStr, addr)
+          })
         }
       })
       ipcRenderer.on('close', (evt) => {
@@ -178,7 +164,9 @@
         if (this.filterTimer !== null) {
           clearTimeout(this.filterTimer)
         }
-        this.filterTimer = setTimeout(() => { this.updateFilter(pattern) }, 500)
+        this.filterTimer = setTimeout(() => {
+          this.updateFilter(pattern, this.currentTab)
+        }, 500)
       }
     },
     beforeDestroy () {
@@ -188,6 +176,47 @@
       ipcRenderer.removeAllListeners('close')
     },
     methods: {
+      addMessage (msg, addr) {
+        // prepend previous received part
+        if (this.buffer.length > 0) {
+          msg = this.buffer + msg
+          this.buffer = ''
+        }
+
+        // messages will be displayed line by line
+        var msgs = msg.split(/\r?\n/)
+        var len = msgs.length - 1
+
+        // detect partly received messages
+        if (msgs[len].length > 0) {
+          this.buffer = msgs[len]
+        }
+
+        for (var i = 0; i < len; i++) {
+          var line = msgs[i]
+          var style = this.getStyle(line)
+          var logContainer = document.getElementById('log' + addr)
+          var logElement = document.createElement('span')
+          var logText = document.createTextNode(line + '\n')
+
+          if (style.length > 0) {
+            logElement.setAttribute('style', style)
+          }
+          logElement.setAttribute('class', 'log')
+          logElement.appendChild(logText)
+          logContainer.appendChild(logElement)
+        }
+      },
+      getTab (addr) {
+        var idx = -1
+        for (var i = 0; i < this.tabs.length; i++) {
+          if (this.tabs[i] === addr) {
+            idx = i
+            break
+          }
+        }
+        return idx
+      },
       listenModal () {
         if (this.state[0] === 'Listen') {
           this.showListen = true
@@ -212,24 +241,26 @@
           child = logContainer.firstChild
         }
       },
-      updateFilter (pattern) {
-        var logElements = document.getElementById('log').children
-        var len = logElements.length
+      updateFilter (pattern, addr) {
+        if (addr.length !== 0) {
+          var logElements = document.getElementById('log' + addr).children
+          var len = logElements.length
 
-        for (var i = 0; i < len; i++) {
-          var elem = logElements[i]
-          var show = this.checkDisplay(pattern, elem.innerText)
-          var style = this.parseStyle(elem.getAttribute('style'))
+          for (var i = 0; i < len; i++) {
+            var elem = logElements[i]
+            var show = this.checkDisplay(pattern, elem.innerText)
+            var style = this.parseStyle(elem.getAttribute('style'))
 
-          if (show) {
-            delete style['display']
-          } else if (style['display'] !== 'none') {
-            style['display'] = 'none'
-          }
-          if (Object.keys(style).length > 0) {
-            elem.setAttribute('style', this.generateStyle(style))
-          } else {
-            elem.removeAttribute('style')
+            if (show) {
+              delete style['display']
+            } else if (style['display'] !== 'none') {
+              style['display'] = 'none'
+            }
+            if (Object.keys(style).length > 0) {
+              elem.setAttribute('style', this.generateStyle(style))
+            } else {
+              elem.removeAttribute('style')
+            }
           }
         }
       },
@@ -294,6 +325,20 @@
       saveConfig () {
         ipcRenderer.send('writeConfig', this.colorForm.patterns)
         this.showColors = false
+      },
+      tabRemove (addr) {
+        this.tabs.splice(this.getTab(addr), 1)
+      },
+      tabChange (addr) {
+        if (addr !== this.currentTab) {
+          if (this.filter.length !== 0) {
+            if (this.currentTab.length !== 0) {
+              this.updateFilter('', this.currentTab)
+            }
+            this.updateFilter(this.filter, addr)
+          }
+          this.currentTab = addr
+        }
       }
     }
   }
@@ -306,8 +351,8 @@ pre {
   white-space: pre-wrap;
   word-wrap: break-word;
 }
-#content {
-  height: calc(100vh - 42px);
+.content {
+  height: calc(100vh - 90px);
   overflow-y: scroll;
   padding: 5px;
 }
