@@ -4,6 +4,8 @@
       <div>
         <Button :type="state[1]" @click="listenModal">{{ state[0] }}</Button>
         <Button type="default" @click="showColorForm">Colors</Button>
+        <Button :type="autoScroll?'primary':'default'"
+            @click="toggleAutoScroll">Auto Scroll</Button>
       </div>
       <Input v-model="filter" style="width: 420px">
         <Select v-model="filterType" slot="prepend" style="width: 80px">
@@ -15,9 +17,7 @@
     </div>
     <Tabs type="card" closable @on-click="tabChange" @on-tab-remove="tabRemove">
       <TabPane v-for="tab in tabs" :key="tab" :name="tab" :label="tab">
-        <div class="content" v-chat-scroll="{always: false}">
-          <pre :id="'log' + tab"></pre>
-        </div>
+          <pre class="content" :id="'log' + tab"></pre>
       </TabPane>
     </Tabs>
     <Modal v-model="showListen" title="Listen" @on-ok="listen"
@@ -121,7 +121,8 @@
         },
         filter: '',
         filterType: 'filter',
-        filterTimer: null
+        filterTimer: null,
+        autoScroll: true
       }
     },
     mounted () {
@@ -158,6 +159,7 @@
         this.$Modal.error({ title: 'Error', content: err })
       ))
       ipcRenderer.send('readConfig')
+      this.checkScroll()
     },
     watch: {
       filter (pattern) {
@@ -176,6 +178,25 @@
       ipcRenderer.removeAllListeners('close')
     },
     methods: {
+      checkScroll (time) {
+        var cTab = this.currentTab
+        if (cTab.length !== 0) {
+          var logContainer = document.getElementById('log' + cTab)
+          if (logContainer.scrollTop + logContainer.offsetHeight !==
+              logContainer.scrollHeight) {
+            logContainer.scrollTop = logContainer.scrollHeight
+          }
+        }
+        if (this.autoScroll) {
+          window.requestAnimationFrame(this.checkScroll)
+        }
+      },
+      toggleAutoScroll () {
+        this.autoScroll = !this.autoScroll
+        if (this.autoScroll) {
+          this.checkScroll(0)
+        }
+      },
       addMessage (msg, addr) {
         // prepend previous received part
         if (this.buffer.length > 0) {
@@ -196,10 +217,10 @@
           this.currentTab = addr
         }
 
+        var logFragment = document.createDocumentFragment()
         for (var i = 0; i < len; i++) {
           var line = msgs[i]
           var style = this.getStyle(line)
-          var logContainer = document.getElementById('log' + addr)
           var logElement = document.createElement('span')
           var logText = document.createTextNode(line + '\n')
 
@@ -208,8 +229,10 @@
           }
           logElement.setAttribute('class', 'log')
           logElement.appendChild(logText)
-          logContainer.appendChild(logElement)
+          logFragment.appendChild(logElement)
         }
+        var logContainer = document.getElementById('log' + addr)
+        logContainer.appendChild(logFragment)
       },
       getTab (addr) {
         var idx = -1
