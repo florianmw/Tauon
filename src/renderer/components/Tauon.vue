@@ -192,6 +192,10 @@
           this.buffer = msgs[len]
         }
 
+        if (this.currentTab.length === 0) {
+          this.currentTab = addr
+        }
+
         for (var i = 0; i < len; i++) {
           var line = msgs[i]
           var style = this.getStyle(line)
