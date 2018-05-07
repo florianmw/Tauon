@@ -249,10 +249,13 @@
         if (addr.length !== 0) {
           var logElements = document.getElementById('log' + addr).children
           var len = logElements.length
+          var regPattern = new RegExp(pattern)
+          var newStyles = []
 
           for (var i = 0; i < len; i++) {
             var elem = logElements[i]
-            var show = this.checkDisplay(pattern, elem.innerText)
+            var show = pattern.length === 0 ||
+                this.checkDisplay(regPattern, elem.innerText)
             var style = this.parseStyle(elem.getAttribute('style'))
 
             if (show) {
@@ -260,11 +263,18 @@
             } else if (style['display'] !== 'none') {
               style['display'] = 'none'
             }
+            newStyles[i] = this.generateStyle(style)
+            /*
             if (Object.keys(style).length > 0) {
               elem.setAttribute('style', this.generateStyle(style))
             } else {
               elem.removeAttribute('style')
-            }
+            } */
+          }
+
+          // apply all style changes at once (avoid layout thrashing)
+          for (i = 0; i < len; i++) {
+            logElements[i].setAttribute('style', newStyles[i])
           }
         }
       },
@@ -284,15 +294,14 @@
           }
         }
 
-        if (!this.checkDisplay(this.filter, line)) {
+        if (this.filter.length !== 0 && !this.checkDisplay(this.filter, line)) {
           style['display'] = 'none'
         }
 
         return this.generateStyle(style)
       },
       checkDisplay (filter, line) {
-        return !(this.filterType === 'filter' && filter.length > 0 &&
-            line.search(filter) === -1)
+        return !(this.filterType === 'filter' && line.search(filter) === -1)
       },
       parseStyle (style) {
         var obj = []
