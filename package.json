@@ -1,9 +1,9 @@
 {
   "name": "tauon",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "author": "florianmw <fwiechers@wiechers-software.de>",
   "description": "Log viewer",
-  "license": null,
+  "license": "MIT",
   "main": "./dist/electron/main.js",
   "scripts": {
     "rebuild": "electron-rebuild -f -w serialport",
@@ -24,7 +24,7 @@
   },
   "build": {
     "productName": "tauon",
-    "appId": "org.simulatedgreg.electron-vue",
+    "appId": "florianmw.tauon",
     "directories": {
       "output": "build"
     },
@@ -116,7 +116,6 @@
     "spectron": "^3.7.1",
     "style-loader": "^0.18.2",
     "url-loader": "^0.5.9",
-    "vue-chat-scroll": "^1.2.1",
     "vue-html-loader": "^1.2.4",
     "vue-loader": "^13.0.5",
     "vue-style-loader": "^3.0.1",
