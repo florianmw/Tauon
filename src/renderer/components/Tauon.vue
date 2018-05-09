@@ -127,7 +127,27 @@
     },
     mounted () {
       ipcRenderer.on('config', (evt, cfg) => {
+        var newStyles = []
+
         this.patterns = cfg
+        for (var i = 0; i < this.tabs.length; i++) {
+          var logElements = document.getElementById('log' + this.tabs[i]).children
+          var len = logElements.length
+
+          for (var j = 0; j < len; j++) {
+            var elem = logElements[j]
+            var oldStyle = elem.getAttribute('style')
+            var newStyle = this.getStyle(elem.innerText)
+            if (oldStyle !== newStyle) {
+              newStyles.push([elem, newStyle])
+            }
+          }
+        }
+
+        for (i = 0; i < newStyles.length; i++) {
+          var pair = newStyles[i]
+          pair[0].setAttribute('style', pair[1])
+        }
       })
       ipcRenderer.on('listening', (evt, addr) => {
         var type = this.listenForm.type === 'dgram' ? 'UDP' : 'Serial'
